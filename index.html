@@ -4,7 +4,14 @@
         <link rel="stylesheet" href="css/main.css" type="text/css"/>
         <script src="script/main.js" type="text/javascript"></script>
     </head>
-    <body onload=init() onmousemove="calculate(event)">
-        <canvas id="camera" width="1280" height="720" style="background-color: red;"></canvas>
+    <body onload="init()" onmousemove="calculate(event)" onkeydown="keyHandler(event)">
+        <div id="wrapper">
+            <canvas id="camera" width="1280" height="720" style="background-color: red;"></canvas>
+            <div id="planes">
+                <ul>
+                    <li id="desc">Planes</li>
+                </ul>
+            </div>
+        </div>
     </body>
 </html>
