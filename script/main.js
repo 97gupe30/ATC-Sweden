@@ -1,6 +1,6 @@
 var aircraftCount = 0;
 var companies = ['NAX', 'BAW', 'EZY', 'SAS', 'KLM'];
-var aircrafts = [new Aircraft(100, 100, '', 5000, 2, aircraftCount), new Aircraft(150, 120, '', 8000, -6, (aircraftCount + 1))];
+var aircrafts = [new Aircraft(100, 100, '', 5000, 2, aircraftCount), new Aircraft(150, 120, '', 8000, 6, (aircraftCount + 1))];
 aircraftCount++;
 
 var vinkel, x, y;
@@ -35,8 +35,11 @@ function Aircraft(x, y, hdg, altitude, speed, id) {
     this.y = y;
     this.speed = speed;
     this.trueSpeed = Math.abs(speed) * 60;
-    this.accSpeed = 3 // Hur snabbt planet accelererar
-    this.finalSpeed = 200;
+    this.accSpeed = Math.random() * 5 // Hur snabbt planet accelererar
+    while(this.accSpeed < 1 || this.accSpeed > 4) {
+        this.accSpeed = Math.random() * 5
+    }
+    this.finalSpeed = this.trueSpeed;
     this.vSpeed = Math.random() * 3000;
     while(this.vSpeed < 1200 || this.vSpeed > 2800) {
         this.vSpeed = Math.random() * 3000;
@@ -73,6 +76,7 @@ function Aircraft(x, y, hdg, altitude, speed, id) {
         ctx.fillRect(this.x, this.y, 5, 5);
         ctx.closePath();
         
+        // Denna delen av koden kollar om planet ska descenda, climba, accelerera eller deaccelerera och gör det isåfall.
         if(this.finalAlt < this.altitude) { // Descend eller climb
             this.altitude -= (this.vSpeed / 3000);
             if(this.altitude < this.finalAlt) 
@@ -84,12 +88,9 @@ function Aircraft(x, y, hdg, altitude, speed, id) {
         }
         if(this.finalSpeed < this.trueSpeed) {
             this.speed -= (this.accSpeed / 3000);
-            console.log(this.accSpeed / 3000);
         } else if(this.finalSpeed > this.trueSpeed) {
             this.speed += (this.accSpeed / 3000);
         }
-        console.log(this.accSpeed);
-        
         this.trueSpeed = Math.abs(this.speed) * 60;
         this.vx = Math.abs(this.speed) * Math.sin(this.hdg);
         this.vy = Math.abs(this.speed) * Math.cos(this.hdg);
