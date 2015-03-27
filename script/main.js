@@ -1,18 +1,19 @@
 var aircraftCount = 0;
 var companies = ['NAX', 'BAW', 'EZY', 'SAS', 'KLM'];
-var aircrafts = [new Aircraft(100, 100, '', 5000, aircraftCount)];
+var aircrafts = [new Aircraft(100, 100, '', 5000, 2, aircraftCount), new Aircraft(150, 120, '', 8000, -6, (aircraftCount + 1))];
 aircraftCount++;
 
 var vinkel, x, y;
+var menu = new Menu();
 
 function init() {
     game = document.getElementById('camera');
     ctx = game.getContext('2d');
 
 
-    calculate(event, 0);
-    window.setInterval(moveAircrafts, 1500);
+    calculate(event);
     window.setInterval(update, 20);
+    window.setInterval(moveAircrafts, 1500);
     game.addEventListener("mousedown", mouseClick, false);
 }
 
@@ -25,7 +26,18 @@ function keyHandler(event) {
     }
 }
 
-function Aircraft(x, y, hdg, altitude, id) {
+function Aircraft(x, y, hdg, altitude, speed, id) {
+    this.x = x;
+    this.y = y;
+    this.speed = speed;
+    this.trueSpeed = Math.abs(speed) * 60;
+    this.vx = speed;
+    this.vy = speed;
+    this.hdg = hdg;
+    this.altitude = altitude;
+    this.id = id;
+    this.activeMenu = 'none';
+
     this.callsignGen = function() {
         var random = Math.round(Math.random() * companies.length);
         if(random = companies.length)
@@ -43,15 +55,6 @@ function Aircraft(x, y, hdg, altitude, id) {
         callsign = company + callsign;
         return callsign;
     }
-
-    this.x = x;
-    this.y = y;
-    this.vx = 1;
-    this.vy = 1;
-    this.hdg = hdg;
-    this.altitude = altitude;
-    this.id = id;
-    this.activeMenu = 'none';
     this.callsign = this.callsignGen();
 
     this.render = function() {
@@ -70,14 +73,10 @@ function Aircraft(x, y, hdg, altitude, id) {
 function Menu() {
     this.activeMenu = 'none';
     this.hdgSelect = function(i) {
-        ctx.arc(aircrafts[i].x, aircrafts[i].y, 200, 0, 2 * Math.PI); // HÄR SKA DU FIXA NU!
+        ctx.arc(aircrafts[i].x + 5, aircrafts[i].y + 5, 100, 0, 2 * Math.PI); // HÄR SKA DU FIXA NU!
         ctx.stroke();
     }
 }
-
-var menu = new Menu();
-
-
 
 function calculate(event) {
     for(var i = 0; i < aircrafts.length; i++) {
@@ -98,6 +97,7 @@ function calculate(event) {
             if(vinkel < 0) {
                 vinkel = Math.abs(vinkel);
             }
+            aircrafts[i].hdg = vinkel;
         }
     }
 
@@ -108,36 +108,54 @@ function mouseClick(event) {
     var rect = game.getBoundingClientRect();
     var mouseX = event.clientX - rect.left;
     var mouseY = event.clientY - rect.top;
-    calculate(event);
     for(var i = 0; i < aircrafts.length; i++) {
-        if(aircrafts[i].activeMenu == 'hdgSelect') {
-            var vx = aircrafts[i].vx * Math.sin(vinkel); // REDIGERA HÄR
-            var vy = aircraftCount[i].vy * Math.cos(vinkel);
+        if(aircrafts[i].activeMenu == 'hdgSelect') { // Funkar just nu. Fixa så den åker via grader istället mot musen.
+            calculate(event);
+            var v = vinkel * Math.PI / 180;
+            var vx = Math.abs(aircrafts[i].speed) * Math.sin(v);
+            var vy = Math.abs(aircrafts[i].speed) * Math.cos(v);
+            aircrafts[i].vx = vx;
+            aircrafts[i].vy = vy;
             console.log(vy, vx);
         }
     }
 
+    var test = true;
     for(var i = 0; i < aircrafts.length; i++) {
-        if(mouseX >= aircrafts[i].x && mouseX <= aircrafts[i].x + 5 && mouseY >= aircrafts[i].y && mouseY <= aircrafts[i].y + 5) {
-            aircrafts[i].activeMenu = 'hdgSelect';
+        if(aircrafts[i].activeMenu == 'hdgSelect') {
+            test = false;
+            i = aircrafts[i].length + 1;
         }
     }
 
-
+    for(var i = 0; i < aircrafts.length; i++) {
+        if(mouseX >= aircrafts[i].x && mouseX <= aircrafts[i].x + 5 && mouseY >= aircrafts[i].y && mouseY <= aircrafts[i].y + 5 && test) {
+            aircrafts[i].activeMenu = 'hdgSelect';
+        }
+    }
 }
 
 function update() {
     ctx.clearRect(0, 0, 1280, 720);
     for(var i = 0; i < aircrafts.length; i++) {
+        var height;
+        if(aircrafts[i].altitude >= 7000) {
+            height = "FL" + (aircrafts[i].altitude / 100);
+        } else {
+            height = aircrafts[i].altitude + "ft";
+        }
+
         aircrafts[i].render();
+        ctx.font = "10px Arial";
+        ctx.fillText(height, aircrafts[i].x + 15, aircrafts[i].y + 15);
+        ctx.fillText(aircrafts[i].trueSpeed + "kt", aircrafts[i].x - 15, aircrafts[i].y + 15);
+
+
         if(aircrafts[i].activeMenu == 'hdgSelect') {
             menu.hdgSelect(i);
-            ctx.font="20px Georgia";
-            ctx.fillText(vinkel, x, y);
+            ctx.font="15px Georgia";
+            ctx.fillText(vinkel, aircrafts[i].x + 100 * Math.cos(vinkel * Math.PI / 180 - (Math.PI/2)), aircrafts[i].y + 100 * Math.sin(vinkel * Math.PI / 180 - (Math.PI/2)));
         }
-    }
-    if(menu.activeMenu == 'hdgSelect') {
-
     }
 }
 
@@ -145,5 +163,4 @@ function moveAircrafts() {
     for(var i = 0; i < aircrafts.length; i++) {
         aircrafts[i].update();
     }
-
 }
