@@ -10,18 +10,22 @@ function init() {
     game = document.getElementById('camera');
     ctx = game.getContext('2d');
 
-
     calculate(event);
     window.setInterval(update, 20);
     window.setInterval(moveAircrafts, 1500);
     game.addEventListener("mousedown", mouseClick, false);
 }
 
-function keyHandler(event) {
+function keyHandler(event, type) {
     var key = event.keyCode;
     if(key == 27) {
         for(var i = 0; i < aircrafts.length; i++) {
             aircrafts[i].activeMenu = 'none';
+        }
+    }
+    if(type == 'input') {
+        if(key == 13) {
+            event.preventDefault();
         }
     }
 }
@@ -31,10 +35,17 @@ function Aircraft(x, y, hdg, altitude, speed, id) {
     this.y = y;
     this.speed = speed;
     this.trueSpeed = Math.abs(speed) * 60;
+    this.accSpeed = 3 // Hur snabbt planet accelererar
+    this.finalSpeed = 200;
+    this.vSpeed = Math.random() * 3000;
+    while(this.vSpeed < 1200 || this.vSpeed > 2800) {
+        this.vSpeed = Math.random() * 3000;
+    }
+    this.altitude = altitude;
+    this.finalAlt = (this.altitude + 1000);
     this.vx = speed;
     this.vy = speed;
     this.hdg = hdg;
-    this.altitude = altitude;
     this.id = id;
     this.activeMenu = 'none';
 
@@ -61,6 +72,27 @@ function Aircraft(x, y, hdg, altitude, speed, id) {
         ctx.beginPath();
         ctx.fillRect(this.x, this.y, 5, 5);
         ctx.closePath();
+        
+        if(this.finalAlt < this.altitude) { // Descend eller climb
+            this.altitude -= (this.vSpeed / 3000);
+            if(this.altitude < this.finalAlt) 
+                this.altitude = this.finalAlt;
+        } else if(this.finalAlt > this.altitude) {
+            this.altitude += (this.vSpeed / 3000);
+            if(this.altitude > this.finalAlt)
+                this.altitude = this.finalAlt;
+        }
+        if(this.finalSpeed < this.trueSpeed) {
+            this.speed -= (this.accSpeed / 3000);
+            console.log(this.accSpeed / 3000);
+        } else if(this.finalSpeed > this.trueSpeed) {
+            this.speed += (this.accSpeed / 3000);
+        }
+        console.log(this.accSpeed);
+        
+        this.trueSpeed = Math.abs(this.speed) * 60;
+        this.vx = Math.abs(this.speed) * Math.sin(this.hdg);
+        this.vy = Math.abs(this.speed) * Math.cos(this.hdg);
     }
 
     this.update = function() {
@@ -97,7 +129,7 @@ function calculate(event) {
             if(vinkel < 0) {
                 vinkel = Math.abs(vinkel);
             }
-            aircrafts[i].hdg = vinkel;
+            
         }
     }
 
@@ -116,7 +148,7 @@ function mouseClick(event) {
             var vy = Math.abs(aircrafts[i].speed) * Math.cos(v);
             aircrafts[i].vx = vx;
             aircrafts[i].vy = vy;
-            console.log(vy, vx);
+            aircrafts[i].hdg = v;
         }
     }
 
@@ -138,17 +170,19 @@ function mouseClick(event) {
 function update() {
     ctx.clearRect(0, 0, 1280, 720);
     for(var i = 0; i < aircrafts.length; i++) {
+        aircrafts[i].trueSpeed = Math.abs(aircrafts[i].speed) * 60;
+        
         var height;
         if(aircrafts[i].altitude >= 7000) {
-            height = "FL" + (aircrafts[i].altitude / 100);
+            height = "FL" + Math.round(aircrafts[i].altitude / 100);
         } else {
-            height = aircrafts[i].altitude + "ft";
+            height = Math.round(aircrafts[i].altitude) + "ft";
         }
 
         aircrafts[i].render();
         ctx.font = "10px Arial";
         ctx.fillText(height, aircrafts[i].x + 15, aircrafts[i].y + 15);
-        ctx.fillText(aircrafts[i].trueSpeed + "kt", aircrafts[i].x - 15, aircrafts[i].y + 15);
+        ctx.fillText(Math.round(aircrafts[i].trueSpeed) + "kt", aircrafts[i].x - 15, aircrafts[i].y + 15);
 
 
         if(aircrafts[i].activeMenu == 'hdgSelect') {
